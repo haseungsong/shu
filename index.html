@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예약 프로그램 캘린더</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .calendar {
+            width: 90%;
+            max-width: 400px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 1.5rem;
+        }
+
+        .calendar-body {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            padding: 10px;
+            gap: 5px;
+        }
+
+        .weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: bold;
+            padding: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .weekdays div:first-child, .weekdays div:last-child {
+            color: red;
+        }
+
+        .day {
+            text-align: center;
+            padding: 15px 0;
+            border-radius: 5px;
+            background-color: #e9e9f0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .day:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .day.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .day.today {
+            background-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+
+        .calendar-footer {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Popup Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #4CAF50;
+        }
+        .modal-content select, .modal-content input, .modal-content button {
+            display: block;
+            width: calc(100% - 22px);
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+    </style>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+</head>
+<body>
+    <div class="calendar">
+        <div class="calendar-header">
+            <button class="btn" id="prev-month">◀</button>
+            <span id="month-year"></span>
+            <button class="btn" id="next-month">▶</button>
+        </div>
+        <div class="weekdays">
+            <div>일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div>토</div>
+        </div>
+        <div class="calendar-body" id="calendar-body"></div>
+        <div class="calendar-footer">
+            <button class="btn" id="today-btn">오늘로 이동</button>
+        </div>
+    </div>
+
+    <!-- 예약 모달 -->
+    <div id="reservation-modal" class="modal">
+        <div class="modal-content">
+            <h2>서비스 예약</h2>
+            <label for="service">원하는 서비스:</label>
+            <select id="service">
+                <option value="cut">커트</option>
+                <option value="perm">파마</option>
+                <option value="color">염색</option>
+            </select>
+            <label for="time">시간 선택:</label>
+            <select id="time"></select>
+            <label for="name">성함:</label>
+            <input type="text" id="name" placeholder="성함을 입력하세요">
+            <label for="contact">연락처:</label>
+            <input type="text" id="contact" placeholder="연락처를 입력하세요">
+            <button class="btn" id="reserve-btn">예약하기</button>
+        </div>
+    </div>
+
+    <!-- 확인 모달 -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content">
+            <h2>예약 확인</h2>
+            <p id="confirmation-details"></p>
+            <button class="btn" id="confirm-btn">최종 확인</button>
+            <button class="btn" id="cancel-btn">취소</button>
+        </div>
+    </div>
+
+    <script>
+        // Google Calendar API 키 설정
+        const CLIENT_ID = '345294474890-k5a3saq6mcakccvsbjk52qhn1e4tb1p1.apps.googleusercontent.com';
+        const API_KEY = 'AIzaSyBMGniBd5UgWD34QsZhNPBrkqd_qDSuF98';
+        const SCOPES = "https://www.googleapis.com/auth/calendar.events";
+
+        const calendarBody = document.getElementById('calendar-body');
+        const monthYear = document.getElementById('month-year');
+        const prevMonth = document.getElementById('prev-month');
+        const nextMonth = document.getElementById('next-month');
+        const todayBtn = document.getElementById('today-btn');
+        const modal = document.getElementById('reservation-modal');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const reserveBtn = document.getElementById('reserve-btn');
+        const confirmBtn = document.getElementById('confirm-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const timeSelect = document.getElementById('time');
+        const confirmationDetails = document.getElementById('confirmation-details');
+        const serviceSelect = document.getElementById('service');
+        const nameInput = document.getElementById('name');
+        const contactInput = document.getElementById('contact');
+
+        let currentDate = new Date();
+
+        function renderCalendar(date) {
+            calendarBody.innerHTML = '';
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const today = new Date();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            monthYear.textContent = `${year}년 ${month + 1}월`;
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyDiv = document.createElement('div');
+                calendarBody.appendChild(emptyDiv);
+            }
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayDiv = document.createElement('div');
+                dayDiv.textContent = day;
+                dayDiv.className = 'day';
+
+                if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
+                    dayDiv.classList.add('today');
+                }
+
+                dayDiv.addEventListener('click', () => {
+                    loadTimeOptions();
+                    modal.style.display = 'block';
+                });
+                calendarBody.appendChild(dayDiv);
+            }
+        }
+
+        function loadTimeOptions() {
+            timeSelect.innerHTML = '';
+            for (let hour = 10; hour <= 19; hour++) {
+                const option = document.createElement('option');
+                option.value = `${hour}:00`;
+                option.textContent = `${hour}:00`;
+                timeSelect.appendChild(option);
+            }
+        }
+
+        reserveBtn.addEventListener('click', () => {
+            const selectedService = serviceSelect.value;
+            const selectedTime = timeSelect.value;
+            const name = nameInput.value;
+            const contact = contactInput.value;
+            confirmationDetails.textContent = `서비스: ${selectedService}, 시간: ${selectedTime}, 성함: ${name}, 연락처: ${contact}`;
+            modal.style.display = 'none';
+            confirmationModal.style.display = 'block';
+        });
+
+        confirmBtn.addEventListener('click', () => {
+            const selectedService = serviceSelect.value;
+            const selectedTime = timeSelect.value;
+            const name = nameInput.value;
+            const contact = contactInput.value;
+
+            gapi.load("client:auth2", () => {
+                gapi.client.init({
+                    apiKey: API_KEY,
+                    clientId: CLIENT_ID,
+                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+                    scope: SCOPES
+                }).then(() => {
+                    return gapi.auth2.getAuthInstance().signIn();
+                }).then(() => {
+                    const event = {
+                        summary: `예약: ${selectedService}`,
+                        description: `예약자: ${name}, 연락처: ${contact}`,
+                        start: {
+                            dateTime: new Date(`${new Date().toISOString().split('T')[0]}T${selectedTime}`).toISOString(),
+                            timeZone: "Asia/Seoul"
+                        },
+                        end: {
+                            dateTime: new Date(`${new Date().toISOString().split('T')[0]}T${parseInt(selectedTime) + 1}:00`).toISOString(),
+                            timeZone: "Asia/Seoul"
+                        }
+                    };
+
+                    return gapi.client.calendar.events.insert({
+                        calendarId: 'primary',
+                        resource: event
+                    });
+                }).then(() => {
+                    alert('Google Calendar에 예약이 저장되었습니다!');
+                }).catch(err => {
+                    console.error(err);
+                    alert('Google Calendar 연동에 실패했습니다.');
+                });
+            });
+
+            confirmationModal.style.display = 'none';
+        });
+
+        cancelBtn.addEventListener('click', () => {
+            confirmationModal.style.display = 'none';
+        });
+
+        prevMonth.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            renderCalendar(currentDate);
+        });
+
+        nextMonth.addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            renderCalendar(currentDate);
+        });
+
+        todayBtn.addEventListener('click', () => {
+            currentDate = new Date();
+            renderCalendar(currentDate);
+        });
+
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+            if (event.target === confirmationModal) {
+                confirmationModal.style.display = 'none';
+            }
+        }
+
+        renderCalendar(currentDate);
+    </script>
+</body>
+</html>
