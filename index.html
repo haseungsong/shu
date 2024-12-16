@@ -278,7 +278,11 @@
                     discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
                     scope: SCOPES
                 }).then(() => {
-                    return gapi.auth2.getAuthInstance().signIn();
+                    // 이미 로그인된 상태인지 확인
+                    const authInstance = gapi.auth2.getAuthInstance();
+                    if (!authInstance.isSignedIn.get()) {
+                        return authInstance.signIn();
+                    }
                 }).then(() => {
                     const event = {
                         summary: `예약: ${selectedService}`,
@@ -300,10 +304,11 @@
                 }).then(() => {
                     alert('Google Calendar에 예약이 저장되었습니다!');
                 }).catch(err => {
-                    console.error(err);
+                    console.error("Google Calendar API Error: ", err);
                     alert('Google Calendar 연동에 실패했습니다.');
                 });
             });
+
 
             confirmationModal.style.display = 'none';
         });
