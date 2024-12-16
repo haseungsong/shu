@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" 
-      content="script-src 'self' https://apis.google.com https://www.gstatic.com https://accounts.google.com 'unsafe-inline'; 
-               frame-src https://accounts.google.com; 
-               connect-src https://www.googleapis.com;">
+          content="default-src 'self'; 
+                   script-src 'self' https://apis.google.com https://www.gstatic.com https://accounts.google.com 'unsafe-inline'; 
+                   frame-src https://accounts.google.com https://content.googleapis.com; 
+                   connect-src https://www.googleapis.com https://content.googleapis.com; 
+                   style-src 'self' 'unsafe-inline';">
     <title>예약 프로그램 캘린더</title>
     <style>
         body {
