@@ -380,7 +380,8 @@
                 const cell = document.createElement('td');
 
                 if (slots.includes(hour)) {
-                    const key = `${date}-${hour}`;
+                    const safeDate = date.replace(/\//g, '-');
+                    const key = `${safeDate}-${hour}`;
                     const status = reservations[key] && reservations[key].status === 'booked' 
                                     ? 'booked' 
                                     : 'available';
@@ -427,10 +428,11 @@
             const slots = getTimeSlots(date);
 
             slots.forEach(hour => {
-                const key = `${date}-${hour}`;
+                const safeDate = date.replace(/\//g, '-');
+                const key = `${safeDate}-${hour}`;
                 const status = reservations[key] && reservations[key].status === 'booked' 
-                                    ? 'booked' 
-                                    : 'available';
+                                ? 'booked' 
+                                : 'available';
 
 
                 const btn = document.createElement('div');
@@ -503,7 +505,8 @@
             return;
         }
 
-        const key = `${selectedDate}-${selectedTime}`;
+        const safeDate = selectedDate.replace(/\//g, '-'); // 슬래시를 -로 변경
+        const key = `${safeDate}-${selectedTime}`;
 
         database.ref('reservations/' + key).set({
             date: selectedDate,
