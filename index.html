@@ -3,113 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" 
-          content="default-src 'self'; 
-                   script-src 'self' https://apis.google.com https://www.gstatic.com https://accounts.google.com 'unsafe-inline'; 
-                   frame-src https://accounts.google.com https://content.googleapis.com; 
-                   connect-src https://www.googleapis.com https://content.googleapis.com; 
-                   style-src 'self' 'unsafe-inline';">
-    <title>예약 프로그램 캘린더</title>
+    <title>미용실 예약 프로그램</title>
     <style>
+        
+        .gender-container {
+            display: flex;
+            gap: 10px;
+        }
+        .gender-button {
+            flex: 1;
+            background-color: #f0f0f0;
+            border: 2px solid #ccc;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+
+        .gender-button:hover {
+            background-color: #d4edda;
+        }
+
+        .gender-button.selected {
+            background-color: #2e7d32;
+            border: 2px solid #1b5e20;
+            color: white;
+            font-weight: bold;
+        }
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
         }
 
-        .calendar {
-            width: 90%;
-            max-width: 400px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+        /* ✅ PC 테이블 스타일 */
+        .table-container {
+            overflow-x: auto;
+            padding: 20px;
         }
-
-        .calendar-header {
-            background-color: #4CAF50;
-            color: white;
-            text-align: center;
-            padding: 15px 0;
-            font-size: 1.5rem;
+        .reservation-table {
+            width: 100%;
+            border-collapse: collapse;
         }
-
-        .calendar-body {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            padding: 10px;
-            gap: 5px;
-        }
-
-        .weekdays {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            text-align: center;
-            font-weight: bold;
-            padding: 10px 0;
-            background-color: #4CAF50;
-            color: white;
-            font-size: 1.2rem;
-        }
-
-        .weekdays div:first-child, .weekdays div:last-child {
-            color: red;
-        }
-
-        .day {
-            text-align: center;
-            padding: 15px 0;
-            border-radius: 5px;
-            background-color: #e9e9f0;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .day:hover {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .day.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .day.today {
-            background-color: #4CAF50;
-            color: white;
-            font-weight: bold;
-        }
-
-        .calendar-footer {
+        .reservation-table th, .reservation-table td {
+            border: 1px solid #ccc;
             text-align: center;
             padding: 10px;
-        }
-
-        .btn {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+            min-width: 80px;
             font-size: 1rem;
         }
-
-        .btn:hover {
-            background-color: #45a049;
+        .reservation-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .reservation-table td.available {
+            background-color: #d4edda;
+            cursor: pointer;
+        }
+        .reservation-table td.booked {
+            background-color: #f8d7da;
+            color: #721c24;
+            cursor: pointer;
+        }
+        .reservation-table td:hover {
+            opacity: 0.8;
         }
 
-        /* Popup Modal */
+        /* ✅ 모바일 스타일 */
+        @media (max-width: 768px) {
+            .table-container {
+                display: none;
+            }
+            .mobile-schedule {
+                display: block;
+                padding: 10px;
+            }
+            .date-block {
+                background-color: #4CAF50;
+                color: white;
+                padding: 10px;
+                border-radius: 10px;
+                margin-bottom: 10px;
+            }
+            .hour-list {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                margin-top: 10px;
+            }
+            .hour-button {
+                flex: 1 1 30%;
+                min-width: 90px;
+                background-color: #d4edda;
+                color: #333;
+                padding: 10px;
+                border-radius: 8px;
+                text-align: center;
+                cursor: pointer;
+            }
+            .hour-button.booked {
+                background-color: #f8d7da;
+                color: #721c24;
+            }
+            .hour-button:hover {
+                opacity: 0.8;
+            }
+        }
+
+        /* ✅ PC에서 모바일 숨기기 */
+        @media (min-width: 769px) {
+            .mobile-schedule {
+                display: none;
+            }
+        }
+
+        /* 📑 예약 입력 모달 */
         .modal {
             display: none;
             position: fixed;
-            z-index: 10;
+            z-index: 99;
             left: 0;
             top: 0;
             width: 100%;
@@ -118,236 +133,358 @@
             background-color: rgba(0,0,0,0.5);
         }
         .modal-content {
-            background-color: #fff;
-            margin: 15% auto;
+            background-color: white;
+            margin: 10% auto;
             padding: 20px;
-            border: 1px solid #888;
             width: 90%;
-            max-width: 400px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            border-radius: 15px;
         }
         .modal-content h2 {
-            margin-top: 0;
             text-align: center;
             color: #4CAF50;
         }
-        .modal-content select, .modal-content input, .modal-content button {
+        .modal-content label {
+            font-size: 1.1rem;
             display: block;
-            width: calc(100% - 22px);
-            margin: 10px 0;
-            padding: 10px;
-            font-size: 1rem;
-            box-sizing: border-box;
+            margin-top: 10px;
+        }
+        .modal-content input, .modal-content select {
+            width: calc(100% - 20px);
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.1rem;
+        }
+        .modal-content button {
+            width: 100%;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .modal-content button:hover {
+            background-color: #45a049;
         }
     </style>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
 </head>
 <body>
-    <div class="calendar">
-        <div class="calendar-header">
-            <button class="btn" id="prev-month">◀</button>
-            <span id="month-year"></span>
-            <button class="btn" id="next-month">▶</button>
+
+<!-- ✅ PC 테이블 -->
+<div class="table-container">
+    <table class="reservation-table" id="reservation-table"></table>
+</div>
+
+<!-- ✅ 모바일 블록 -->
+<div class="mobile-schedule" id="mobile-schedule"></div>
+
+<!-- 📑 예약 입력 모달 -->
+<div id="reservation-modal" class="modal">
+    <div class="modal-content">
+        <h2 id="reservation-title">예약 정보 입력</h2>
+
+        <label>연락처 (필수):</label>
+        <input type="text" id="contact" placeholder="예)11995033606">
+        
+        <label>성별:</label>
+        <div class="gender-container">
+            <button type="button" class="gender-button" data-value="남자" onclick="selectGender('남자')">남자</button>
+            <button type="button" class="gender-button" data-value="여자" onclick="selectGender('여자')">여자</button>
         </div>
-        <div class="weekdays">
-            <div>일</div>
-            <div>월</div>
-            <div>화</div>
-            <div>수</div>
-            <div>목</div>
-            <div>금</div>
-            <div>토</div>
-        </div>
-        <div class="calendar-body" id="calendar-body"></div>
-        <div class="calendar-footer">
-            <button class="btn" id="today-btn">오늘로 이동</button>
-        </div>
+        <input type="hidden" id="gender">
+        
+        
+        <label>성함:</label>
+        <input type="text" id="name" placeholder="성함 입력">
+        
+        <label>서비스:</label>
+        <select id="service">
+            <option value="cut">커트</option>
+            <option value="perm-magic">펌 - 매직</option>
+            <option value="perm-setting">펌 - 세팅</option>
+            <option value="perm-basic">펌 - 일반펌</option>
+            <option value="color-basic">염색</option>
+            <option value="color+cut">염색 + 커트</option>
+            <option value="bleach">브릿지</option>
+        </select>
+
+        <label>비고:</label>
+        <input type="text" id="note" placeholder="추가 요청사항을 입력하세요">
+        
+        <button onclick="submitReservation()">예약하기</button>
+        <button onclick="closeReservationModal()">닫기</button>
+        
     </div>
+</div>
 
-    <!-- 예약 모달 -->
-    <div id="reservation-modal" class="modal">
-        <div class="modal-content">
-            <h2>서비스 예약</h2>
-            <label for="service">원하는 서비스:</label>
-            <select id="service">
-                <option value="cut">커트</option>
-                <option value="perm">파마</option>
-                <option value="color">염색</option>
-            </select>
-            <label for="time">시간 선택:</label>
-            <select id="time"></select>
-            <label for="name">성함:</label>
-            <input type="text" id="name" placeholder="성함을 입력하세요">
-            <label for="contact">연락처:</label>
-            <input type="text" id="contact" placeholder="연락처를 입력하세요">
-            <button class="btn" id="reserve-btn">예약하기</button>
-        </div>
-    </div>
+<script>
+    const reservations = {};
+    let selectedDate = '';
+    let selectedTime = '';
 
-    <!-- 확인 모달 -->
-    <div id="confirmation-modal" class="modal">
-        <div class="modal-content">
-            <h2>예약 확인</h2>
-            <p id="confirmation-details"></p>
-            <button class="btn" id="confirm-btn">최종 확인</button>
-            <button class="btn" id="cancel-btn">취소</button>
-        </div>
-    </div>
-
-    <script>
-        // Google Calendar API 키 설정
-        const CLIENT_ID = '345294474890-ic1ovngvmsp2fmm75l44fusihfuhfskl.apps.googleusercontent.com';
-        const API_KEY = 'AIzaSyBMGniBd5UgWD34QsZhNPBrkqd_qDSuF98';
-        const SCOPES = "https://www.googleapis.com/auth/calendar.events";
-
-        const calendarBody = document.getElementById('calendar-body');
-        const monthYear = document.getElementById('month-year');
-        const prevMonth = document.getElementById('prev-month');
-        const nextMonth = document.getElementById('next-month');
-        const todayBtn = document.getElementById('today-btn');
-        const modal = document.getElementById('reservation-modal');
-        const confirmationModal = document.getElementById('confirmation-modal');
-        const reserveBtn = document.getElementById('reserve-btn');
-        const confirmBtn = document.getElementById('confirm-btn');
-        const cancelBtn = document.getElementById('cancel-btn');
-        const timeSelect = document.getElementById('time');
-        const confirmationDetails = document.getElementById('confirmation-details');
-        const serviceSelect = document.getElementById('service');
-        const nameInput = document.getElementById('name');
-        const contactInput = document.getElementById('contact');
-
-        let currentDate = new Date();
-
-        function renderCalendar(date) {
-            calendarBody.innerHTML = '';
-            const year = date.getFullYear();
-            const month = date.getMonth();
-            const today = new Date();
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            monthYear.textContent = `${year}년 ${month + 1}월`;
-
-            for (let i = 0; i < firstDay; i++) {
-                const emptyDiv = document.createElement('div');
-                calendarBody.appendChild(emptyDiv);
-            }
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dayDiv = document.createElement('div');
-                dayDiv.textContent = day;
-                dayDiv.className = 'day';
-
-                if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
-                    dayDiv.classList.add('today');
-                }
-
-                dayDiv.addEventListener('click', () => {
-                    loadTimeOptions();
-                    modal.style.display = 'block';
-                });
-                calendarBody.appendChild(dayDiv);
+    // 📅 날짜 라벨 생성 (오늘부터 14일)
+    function getDateLabels() {
+        const today = new Date();
+        const labels = [];
+        for (let i = 0; i < 14; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + i);
+            const day = date.getDay();
+            if (day !== 0) { // 일요일 제외
+                const label = `${date.getMonth()+1}/${date.getDate()}(${["일","월","화","수","목","금","토"][day]})`;
+                labels.push(label);
             }
         }
+        return labels;
+    }
 
-        function loadTimeOptions() {
-            timeSelect.innerHTML = '';
-            for (let hour = 10; hour <= 19; hour++) {
-                const option = document.createElement('option');
-                option.value = `${hour}:00`;
-                option.textContent = `${hour}:00`;
-                timeSelect.appendChild(option);
-            }
-        }
+    // ✅ 시간 슬롯 생성 함수
+    function getTimeSlots(dateLabel) {
+        const month = parseInt(dateLabel.split('/')[0]);
+        const day = parseInt(dateLabel.split('/')[1]);
+        const today = new Date();
+        const date = new Date(today.getFullYear(), month - 1, day);
+        const dayOfWeek = date.getDay();
 
-        reserveBtn.addEventListener('click', () => {
-            const selectedService = serviceSelect.value;
-            const selectedTime = timeSelect.value;
-            const name = nameInput.value;
-            const contact = contactInput.value;
-            confirmationDetails.textContent = `서비스: ${selectedService}, 시간: ${selectedTime}, 성함: ${name}, 연락처: ${contact}`;
-            modal.style.display = 'none';
-            confirmationModal.style.display = 'block';
-        });
+        const slots = [];
+        const isToday = today.getFullYear() === date.getFullYear() &&
+                        today.getMonth() === date.getMonth() &&
+                        today.getDate() === date.getDate();
 
-        confirmBtn.addEventListener('click', () => {
-            const selectedService = serviceSelect.value;
-            const selectedTime = timeSelect.value;
-            const name = nameInput.value;
-            const contact = contactInput.value;
+        // 현재 시각 계산
+        const currentHour = today.getHours();
+        const currentMinute = today.getMinutes();
 
-            gapi.load("client:auth2", () => {
-                gapi.client.init({
-                    apiKey: API_KEY,
-                    clientId: CLIENT_ID,
-                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-                    scope: SCOPES
-                }).then(() => {
-                    // 이미 로그인된 상태인지 확인
-                    const authInstance = gapi.auth2.getAuthInstance();
-                    if (!authInstance.isSignedIn.get()) {
-                        return authInstance.signIn();
+        // 토요일
+        if (dayOfWeek === 6) {
+            const times = [
+                '09:30', '10:00', '10:30', '11:00', '11:30',
+                '12:00', '12:30', '13:00', '13:30',
+                '14:00', '14:30', '15:00'
+            ];
+
+            times.forEach(time => {
+                if (!isToday) {
+                    slots.push(time);
+                } else {
+                    const [h, m] = time.split(':').map(Number);
+                    if (h > currentHour || (h === currentHour && m > currentMinute)) {
+                        slots.push(time);
                     }
-                }).then(() => {
-                    const event = {
-                        summary: `예약: ${selectedService}`,
-                        description: `예약자: ${name}, 연락처: ${contact}`,
-                        start: {
-                            dateTime: new Date(`${new Date().toISOString().split('T')[0]}T${selectedTime}`).toISOString(),
-                            timeZone: "Asia/Seoul"
-                        },
-                        end: {
-                            dateTime: new Date(`${new Date().toISOString().split('T')[0]}T${parseInt(selectedTime) + 1}:00`).toISOString(),
-                            timeZone: "Asia/Seoul"
-                        }
-                    };
-
-                    return gapi.client.calendar.events.insert({
-                        calendarId: 'primary',
-                        resource: event
-                    });
-                }).then(() => {
-                    alert('Google Calendar에 예약이 저장되었습니다!');
-                }).catch(err => {
-                    console.error("Google Calendar API Error: ", err);
-                    alert('Google Calendar 연동에 실패했습니다.');
-                });
+                }
             });
 
-
-            confirmationModal.style.display = 'none';
-        });
-
-        cancelBtn.addEventListener('click', () => {
-            confirmationModal.style.display = 'none';
-        });
-
-        prevMonth.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() - 1);
-            renderCalendar(currentDate);
-        });
-
-        nextMonth.addEventListener('click', () => {
-            currentDate.setMonth(currentDate.getMonth() + 1);
-            renderCalendar(currentDate);
-        });
-
-        todayBtn.addEventListener('click', () => {
-            currentDate = new Date();
-            renderCalendar(currentDate);
-        });
-
-        window.onclick = function(event) {
-            if (event.target === modal) {
-                modal.style.display = 'none';
+        } else {
+            // 평일
+            const weekdayTimes = [];
+            for (let h = 10; h <= 18; h++) {
+                weekdayTimes.push(`${h}:00`);
+                weekdayTimes.push(`${h}:30`);
             }
-            if (event.target === confirmationModal) {
-                confirmationModal.style.display = 'none';
-            }
+            weekdayTimes.push('19:00');
+
+            weekdayTimes.forEach(time => {
+                if (!isToday) {
+                    slots.push(time);
+                } else {
+                    const [h, m] = time.split(':').map(Number);
+                    if (h > currentHour || (h === currentHour && m > currentMinute)) {
+                        slots.push(time);
+                    }
+                }
+            });
         }
 
-        renderCalendar(currentDate);
-    </script>
+        return slots;
+    }
+
+
+    // ✅ PC 테이블 생성
+    function generateTable() {
+        const table = document.getElementById('reservation-table');
+        table.innerHTML = '';
+
+        const dates = getDateLabels();
+
+        const headerRow = document.createElement('tr');
+        const timeHeader = document.createElement('th');
+        timeHeader.textContent = '시간';
+        headerRow.appendChild(timeHeader);
+
+        dates.forEach(date => {
+            const th = document.createElement('th');
+            th.textContent = date;
+            headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+
+        // 시간 슬롯 통합
+        const allTimes = new Set();
+        dates.forEach(date => {
+            getTimeSlots(date).forEach(time => allTimes.add(time));
+        });
+        const sortedTimes = Array.from(allTimes).sort((a, b) => {
+            const [ah, am] = a.split(':').map(Number);
+            const [bh, bm] = b.split(':').map(Number);
+            return ah !== bh ? ah - bh : am - bm;
+        });
+
+        sortedTimes.forEach(hour => {
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = hour;
+            row.appendChild(timeCell);
+
+            dates.forEach(date => {
+                const slots = getTimeSlots(date);
+                const cell = document.createElement('td');
+
+                if (slots.includes(hour)) {
+                    const key = `${date}-${hour}`;
+                    const status = reservations[key] || 'available';
+
+                    cell.className = status === 'available' ? 'available' : 'booked';
+                    cell.textContent = status === 'available' ? '예약 가능' : '예약 완료';
+
+                    cell.addEventListener('click', () => {
+                        selectedDate = date;
+                        selectedTime = hour;
+                        if (status === 'available') {
+                            openReservationModal();
+                        } else {
+                            alert('이미 예약된 시간입니다.');
+                        }
+                    });
+                } else {
+                    cell.style.backgroundColor = '#e9ecef'; // 비활성 회색
+                }
+
+                row.appendChild(cell);
+            });
+
+            table.appendChild(row);
+        });
+    }
+
+    // ✅ 모바일 블록 생성
+    function generateMobileSchedule() {
+        const container = document.getElementById('mobile-schedule');
+        container.innerHTML = '';
+
+        const dates = getDateLabels();
+
+        dates.forEach(date => {
+            const block = document.createElement('div');
+            block.className = 'date-block';
+            block.innerHTML = `<strong>${date}</strong>`;
+
+            const hourList = document.createElement('div');
+            hourList.className = 'hour-list';
+
+            const slots = getTimeSlots(date);
+
+            slots.forEach(hour => {
+                const key = `${date}-${hour}`;
+                const status = reservations[key] || 'available';
+
+                const btn = document.createElement('div');
+                btn.className = status === 'available' ? 'hour-button' : 'hour-button booked';
+                btn.textContent = `${hour}\n${status === 'available' ? '예약 가능' : '예약 완료'}`;
+
+                btn.addEventListener('click', () => {
+                    selectedDate = date;
+                    selectedTime = hour;
+                    if (status === 'available') {
+                        openReservationModal();
+                    } else {
+                        alert('이미 예약된 시간입니다.');
+                    }
+                });
+
+                hourList.appendChild(btn);
+            });
+
+            block.appendChild(hourList);
+            container.appendChild(block);
+        });
+    }
+
+    // ✅ 예약 모달 열기
+    function openReservationModal() {
+        document.getElementById('reservation-title').textContent =
+            `${selectedDate} ${selectedTime} 예약 정보 입력`;
+        document.getElementById('reservation-modal').style.display = 'block';
+    }
+
+    // ✅ 예약 모달 닫기
+    function closeReservationModal() {
+        document.getElementById('reservation-modal').style.display = 'none';
+    }
+
+
+    function selectGender(value) {
+        document.getElementById('gender').value = value;
+        const buttons = document.querySelectorAll('.gender-button');
+        buttons.forEach(btn => {
+            if (btn.getAttribute('data-value') === value) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    }
+
+
+    // ✅ 예약 확정
+    function submitReservation() {
+        const name = document.getElementById('name').value.trim();
+        const contact = document.getElementById('contact').value.trim();
+        const gender = document.getElementById('gender').value.trim(); // 🔥 추가
+        const service = document.getElementById('service').value;
+        const note = document.getElementById('note').value.trim();
+
+
+        if (!contact) {
+            alert("연락처를 입력해주세요.");
+            return;
+        }
+        if (!gender) {
+            alert("성별을 선택해주세요."); // 🔥 성별 체크 추가
+            return;
+        }
+        if (!name) {
+            alert("성함을 입력해주세요.");
+            return;
+        }
+
+        const key = `${selectedDate}-${selectedTime}`;
+        reservations[key] = 'booked';
+
+        alert(`예약 완료:
+        날짜: ${selectedDate}
+        시간: ${selectedTime}
+        연락처: ${contact}
+        성별: ${gender}
+        이름: ${name}
+        서비스: ${service}
+        비고: ${note}`);
+
+        closeReservationModal();
+        generateTable();
+        generateMobileSchedule();
+    }
+
+
+    // ✅ 페이지 로드 시 실행
+    window.onload = () => {
+        generateTable();
+        generateMobileSchedule();
+    };
+</script>
+
 </body>
 </html>
