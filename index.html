@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
     <title>미용실 예약 프로그램</title>
     <style>
         
@@ -222,6 +226,20 @@
 </div>
 
 <script>
+
+    const firebaseConfig = {
+    apiKey: "AIzaSyBXmLMLMUeu1Y_WyDmvfZkg93u4T-nQewM",
+    authDomain: "hair-reservation-78133.firebaseapp.com",
+    databaseURL: "https://hair-reservation-78133-default-rtdb.firebaseio.com",
+    projectId: "hair-reservation-78133",
+    storageBucket: "hair-reservation-78133.appspot.com",
+    messagingSenderId: "326975030914",
+    appId: "1:326975030914:web:5f050889459dc09ed3d69b"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     const reservations = {};
     let selectedDate = '';
     let selectedTime = '';
@@ -462,16 +480,31 @@
         }
 
         const key = `${selectedDate}-${selectedTime}`;
-        reservations[key] = 'booked';
 
-        alert(`예약 완료:
-        날짜: ${selectedDate}
-        시간: ${selectedTime}
-        연락처: ${contact}
-        성별: ${gender}
-        이름: ${name}
-        서비스: ${service}
-        비고: ${note}`);
+        database.ref('reservations/' + key).set({
+            date: selectedDate,
+            time: selectedTime,
+            contact: contact,
+            gender: gender,
+            name: name,
+            service: service,
+            note: note,
+            status: "booked",
+            timestamp: Date.now()
+        }, (error) => {
+            if (error) {
+                alert('예약 저장 중 오류 발생');
+            } else {
+                alert(`예약 완료:
+                날짜: ${selectedDate}
+                시간: ${selectedTime}
+                연락처: ${contact}
+                성별: ${gender}
+                이름: ${name}
+                서비스: ${service}
+                비고: ${note}`);
+            }
+        });
 
         closeReservationModal();
         generateTable();
@@ -479,11 +512,25 @@
     }
 
 
+    function loadReservationsFromFirebase() {
+        database.ref('reservations').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            // 예약 상태만 따로 저장
+            for (let key in data) {
+                reservations[key] = data[key].status;
+            }
+            generateTable();
+            generateMobileSchedule();
+        });
+    }
+
+
+
     // ✅ 페이지 로드 시 실행
     window.onload = () => {
-        generateTable();
-        generateMobileSchedule();
+        loadReservationsFromFirebase();
     };
+
 </script>
 
 </body>
