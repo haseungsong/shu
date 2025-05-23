@@ -18,6 +18,7 @@
             background-color: #4CAF50;
             padding: 10px 20px;
             color: white;
+            flex-wrap: nowrap; /* 🔥 강제 한 줄 */
         }
         .header .title {
             font-size: 1.8rem;
@@ -30,6 +31,11 @@
             font-size: 1rem;
             background-color: white;
             color: black;
+
+                /* 🔥 여기 추가 */
+            width: 160px;
+            max-width: 100%;
+            box-sizing: border-box;
         }
 
         /* ✅ 예약 테이블 및 버튼 스타일 */
