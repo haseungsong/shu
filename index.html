@@ -9,7 +9,24 @@
 
     <title>미용실 예약 프로그램</title>
     <style>
-        
+
+        .hour-button {
+            flex: 1 1 30%;
+            min-width: 90px;
+            background-color: #d4edda;
+            color: #333;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* ✅ 버튼 음영 */
+        }
+
+        .hour-button.booked {
+            background-color: #f8d7da;
+            color: #721c24;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3); /* ✅ 예약 완료는 안쪽 음영 */
+        }
         .gender-container {
             display: flex;
             gap: 10px;
@@ -364,7 +381,9 @@
 
                 if (slots.includes(hour)) {
                     const key = `${date}-${hour}`;
-                    const status = reservations[key] ? reservations[key].status : 'available';
+                    const status = reservations[key] && reservations[key].status 
+                        ? reservations[key].status 
+                        : (reservations[key] === "booked" ? "booked" : "available");
 
                     cell.className = status === 'available' ? 'available' : 'booked';
                     cell.textContent = status === 'available' ? '예약 가능' : '예약 완료';
