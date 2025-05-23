@@ -7,9 +7,32 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-    <title>미용실 예약 프로그램</title>
-    <style>
+    <title>SHU 미용실 예약 프로그램</title>
 
+    <style>
+        /* ✅ 상단 헤더 */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #4CAF50;
+            padding: 10px 20px;
+            color: white;
+        }
+        .header .title {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+        .header .date-picker input[type="date"] {
+            padding: 8px 12px;
+            border-radius: 10px;
+            border: 2px solid black;
+            font-size: 1rem;
+            background-color: white;
+            color: black;
+        }
+
+        /* ✅ 예약 테이블 및 버튼 스타일 */
         .hour-button {
             flex: 1 1 30%;
             min-width: 90px;
@@ -19,13 +42,12 @@
             border-radius: 8px;
             text-align: center;
             cursor: pointer;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2); /* ✅ 버튼 음영 */
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
         }
-
         .hour-button.booked {
             background-color: #f8d7da;
             color: #721c24;
-            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3); /* ✅ 예약 완료는 안쪽 음영 */
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.3);
         }
         .gender-container {
             display: flex;
@@ -42,17 +64,16 @@
             color: #333;
             transition: all 0.2s ease;
         }
-
         .gender-button:hover {
             background-color: #d4edda;
         }
-
         .gender-button.selected {
             background-color: #2e7d32;
             border: 2px solid #1b5e20;
             color: white;
             font-weight: bold;
         }
+
         body {
             margin: 0;
             font-family: 'Arial', sans-serif;
@@ -133,15 +154,13 @@
                 opacity: 0.8;
             }
         }
-
-        /* ✅ PC에서 모바일 숨기기 */
         @media (min-width: 769px) {
             .mobile-schedule {
                 display: none;
             }
         }
 
-        /* 📑 예약 입력 모달 */
+        /* ✅ 예약 입력 모달 */
         .modal {
             display: none;
             position: fixed;
@@ -187,14 +206,23 @@
             border-radius: 10px;
             cursor: pointer;
             font-size: 1.2rem;
-            margin-top: 10px; /* ✅ 버튼 위 여백 추가 */
-        }           
+            margin-top: 10px;
+        }
         .modal-content button:hover {
             background-color: #45a049;
         }
     </style>
 </head>
+
 <body>
+
+<!-- ✅ 상단 헤더 -->
+<div class="header">
+    <div class="title">SHU 미용실 예약</div>
+    <div class="date-picker">
+        <input type="date" id="dateSelector" value="2025-05-23">
+    </div>
+</div>
 
 <!-- ✅ PC 테이블 -->
 <div class="table-container">
@@ -204,25 +232,24 @@
 <!-- ✅ 모바일 블록 -->
 <div class="mobile-schedule" id="mobile-schedule"></div>
 
-<!-- 📑 예약 입력 모달 -->
+<!-- ✅ 예약 입력 모달 -->
 <div id="reservation-modal" class="modal">
     <div class="modal-content">
         <h2 id="reservation-title">예약 정보 입력</h2>
 
         <label>연락처 (필수):</label>
         <input type="text" id="contact" placeholder="예)11995033606">
-        
+
         <label>성별:</label>
         <div class="gender-container">
             <button type="button" class="gender-button" data-value="남자" onclick="selectGender('남자')">남자</button>
             <button type="button" class="gender-button" data-value="여자" onclick="selectGender('여자')">여자</button>
         </div>
         <input type="hidden" id="gender">
-        
-        
+
         <label>성함:</label>
         <input type="text" id="name" placeholder="성함 입력">
-        
+
         <label>서비스:</label>
         <select id="service">
             <option value="cut">커트</option>
@@ -236,25 +263,22 @@
 
         <label>비고:</label>
         <input type="text" id="note" placeholder="추가 요청사항을 입력하세요">
-        
+
         <button onclick="submitReservation()">예약하기</button>
         <button onclick="closeReservationModal()">닫기</button>
-        
     </div>
 </div>
 
 <script>
-
     const firebaseConfig = {
-    apiKey: "AIzaSyBXmLMLMUeu1Y_WyDmvfZkg93u4T-nQewM",
-    authDomain: "hair-reservation-78133.firebaseapp.com",
-    databaseURL: "https://hair-reservation-78133-default-rtdb.firebaseio.com",
-    projectId: "hair-reservation-78133",
-    storageBucket: "hair-reservation-78133.appspot.com",
-    messagingSenderId: "326975030914",
-    appId: "1:326975030914:web:5f050889459dc09ed3d69b"
+        apiKey: "AIzaSyBXmLMLMUeu1Y_WyDmvfZkg93u4T-nQewM",
+        authDomain: "hair-reservation-78133.firebaseapp.com",
+        databaseURL: "https://hair-reservation-78133-default-rtdb.firebaseio.com",
+        projectId: "hair-reservation-78133",
+        storageBucket: "hair-reservation-78133.appspot.com",
+        messagingSenderId: "326975030914",
+        appId: "1:326975030914:web:5f050889459dc09ed3d69b"
     };
-
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
@@ -262,7 +286,6 @@
     let selectedDate = '';
     let selectedTime = '';
 
-    // 📅 날짜 라벨 생성 (오늘부터 14일)
     function getDateLabels() {
         const today = new Date();
         const labels = [];
@@ -270,7 +293,7 @@
             const date = new Date(today);
             date.setDate(today.getDate() + i);
             const day = date.getDay();
-            if (day !== 0) { // 일요일 제외
+            if (day !== 0) {
                 const label = `${date.getMonth()+1}/${date.getDate()}(${["일","월","화","수","목","금","토"][day]})`;
                 labels.push(label);
             }
@@ -278,7 +301,6 @@
         return labels;
     }
 
-    // ✅ 시간 슬롯 생성 함수
     function getTimeSlots(dateLabel) {
         const month = parseInt(dateLabel.split('/')[0]);
         const day = parseInt(dateLabel.split('/')[1]);
@@ -291,31 +313,22 @@
                         today.getMonth() === date.getMonth() &&
                         today.getDate() === date.getDate();
 
-        // 현재 시각 계산
         const currentHour = today.getHours();
         const currentMinute = today.getMinutes();
 
-        // 토요일
         if (dayOfWeek === 6) {
             const times = [
                 '09:30', '10:00', '10:30', '11:00', '11:30',
                 '12:00', '12:30', '13:00', '13:30',
                 '14:00', '14:30', '15:00'
             ];
-
             times.forEach(time => {
-                if (!isToday) {
+                const [h, m] = time.split(':').map(Number);
+                if (!isToday || h > currentHour || (h === currentHour && m > currentMinute)) {
                     slots.push(time);
-                } else {
-                    const [h, m] = time.split(':').map(Number);
-                    if (h > currentHour || (h === currentHour && m > currentMinute)) {
-                        slots.push(time);
-                    }
                 }
             });
-
         } else {
-            // 평일
             const weekdayTimes = [];
             for (let h = 10; h <= 18; h++) {
                 weekdayTimes.push(`${h}:00`);
@@ -324,28 +337,19 @@
             weekdayTimes.push('19:00');
 
             weekdayTimes.forEach(time => {
-                if (!isToday) {
+                const [h, m] = time.split(':').map(Number);
+                if (!isToday || h > currentHour || (h === currentHour && m > currentMinute)) {
                     slots.push(time);
-                } else {
-                    const [h, m] = time.split(':').map(Number);
-                    if (h > currentHour || (h === currentHour && m > currentMinute)) {
-                        slots.push(time);
-                    }
                 }
             });
         }
-
         return slots;
     }
 
-
-    // ✅ PC 테이블 생성
     function generateTable() {
         const table = document.getElementById('reservation-table');
         table.innerHTML = '';
-
         const dates = getDateLabels();
-
         const headerRow = document.createElement('tr');
         const timeHeader = document.createElement('th');
         timeHeader.textContent = '시간';
@@ -358,7 +362,6 @@
         });
         table.appendChild(headerRow);
 
-        // 시간 슬롯 통합
         const allTimes = new Set();
         dates.forEach(date => {
             getTimeSlots(date).forEach(time => allTimes.add(time));
@@ -382,12 +385,9 @@
                 if (slots.includes(hour)) {
                     const safeDate = date.replace(/\//g, '-');
                     const key = `${safeDate}-${hour}`;
-                    const status = reservations[key] && reservations[key].status === 'booked' 
-                                    ? 'booked' 
-                                    : 'available';
+                    const status = reservations[key]?.status === 'booked' ? 'booked' : 'available';
 
-
-                    cell.className = status === 'available' ? 'available' : 'booked';
+                    cell.className = status;
                     cell.textContent = status === 'available' ? '예약 가능' : '예약 완료';
 
                     cell.addEventListener('click', () => {
@@ -400,9 +400,8 @@
                         }
                     });
                 } else {
-                    cell.style.backgroundColor = '#e9ecef'; // 비활성 회색
+                    cell.style.backgroundColor = '#e9ecef';
                 }
-
                 row.appendChild(cell);
             });
 
@@ -410,11 +409,9 @@
         });
     }
 
-    // ✅ 모바일 블록 생성
     function generateMobileSchedule() {
         const container = document.getElementById('mobile-schedule');
         container.innerHTML = '';
-
         const dates = getDateLabels();
 
         dates.forEach(date => {
@@ -426,14 +423,10 @@
             hourList.className = 'hour-list';
 
             const slots = getTimeSlots(date);
-
             slots.forEach(hour => {
                 const safeDate = date.replace(/\//g, '-');
                 const key = `${safeDate}-${hour}`;
-                const status = reservations[key] && reservations[key].status === 'booked' 
-                                ? 'booked' 
-                                : 'available';
-
+                const status = reservations[key]?.status === 'booked' ? 'booked' : 'available';
 
                 const btn = document.createElement('div');
                 btn.className = status === 'available' ? 'hour-button' : 'hour-button booked';
@@ -457,79 +450,51 @@
         });
     }
 
-    // ✅ 예약 모달 열기
     function openReservationModal() {
-        document.getElementById('reservation-title').textContent =
-            `${selectedDate} ${selectedTime} 예약 정보 입력`;
+        document.getElementById('reservation-title').textContent = `${selectedDate} ${selectedTime} 예약 정보 입력`;
         document.getElementById('reservation-modal').style.display = 'block';
     }
 
-    // ✅ 예약 모달 닫기
     function closeReservationModal() {
         document.getElementById('reservation-modal').style.display = 'none';
     }
 
-
     function selectGender(value) {
         document.getElementById('gender').value = value;
-        const buttons = document.querySelectorAll('.gender-button');
-        buttons.forEach(btn => {
-            if (btn.getAttribute('data-value') === value) {
-                btn.classList.add('selected');
-            } else {
-                btn.classList.remove('selected');
-            }
+        document.querySelectorAll('.gender-button').forEach(btn => {
+            btn.classList.toggle('selected', btn.dataset.value === value);
         });
     }
 
-
-    // ✅ 예약 확정
     function submitReservation() {
         const name = document.getElementById('name').value.trim();
         const contact = document.getElementById('contact').value.trim();
-        const gender = document.getElementById('gender').value.trim(); // 🔥 추가
+        const gender = document.getElementById('gender').value.trim();
         const service = document.getElementById('service').value;
         const note = document.getElementById('note').value.trim();
 
+        if (!contact) return alert("연락처를 입력해주세요.");
+        if (!gender) return alert("성별을 선택해주세요.");
+        if (!name) return alert("성함을 입력해주세요.");
 
-        if (!contact) {
-            alert("연락처를 입력해주세요.");
-            return;
-        }
-        if (!gender) {
-            alert("성별을 선택해주세요."); // 🔥 성별 체크 추가
-            return;
-        }
-        if (!name) {
-            alert("성함을 입력해주세요.");
-            return;
-        }
-
-        const safeDate = selectedDate.replace(/\//g, '-'); // 슬래시를 -로 변경
+        const safeDate = selectedDate.replace(/\//g, '-');
         const key = `${safeDate}-${selectedTime}`;
 
         database.ref('reservations/' + key).set({
             date: selectedDate,
             time: selectedTime,
-            contact: contact,
-            gender: gender,
-            name: name,
-            service: service,
-            note: note,
+            contact,
+            gender,
+            name,
+            service,
+            note,
             status: "booked",
             timestamp: Date.now()
         }, (error) => {
             if (error) {
                 alert('예약 저장 중 오류 발생');
             } else {
-                alert(`예약 완료:
-                날짜: ${selectedDate}
-                시간: ${selectedTime}
-                연락처: ${contact}
-                성별: ${gender}
-                이름: ${name}
-                서비스: ${service}
-                비고: ${note}`);
+                alert(`예약 완료:\n날짜: ${selectedDate}\n시간: ${selectedTime}\n연락처: ${contact}\n성별: ${gender}\n이름: ${name}\n서비스: ${service}\n비고: ${note}`);
             }
         });
 
@@ -538,28 +503,16 @@
         generateMobileSchedule();
     }
 
-
     function loadReservationsFromFirebase() {
         database.ref('reservations').on('value', (snapshot) => {
             const data = snapshot.val() || {};
-            reservations = {}; // ✅ 이전 데이터 초기화
-
-            for (let key in data) {
-                reservations[key] = data[key];
-            }
-
+            reservations = {...data};
             generateTable();
             generateMobileSchedule();
         });
     }
 
-
-
-    // ✅ 페이지 로드 시 실행
-    window.onload = () => {
-        loadReservationsFromFirebase();
-    };
-
+    window.onload = loadReservationsFromFirebase;
 </script>
 
 </body>
