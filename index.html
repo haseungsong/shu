@@ -241,7 +241,7 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    const reservations = {};
+    let reservations = {};
     let selectedDate = '';
     let selectedTime = '';
 
@@ -516,10 +516,12 @@
     function loadReservationsFromFirebase() {
         database.ref('reservations').on('value', (snapshot) => {
             const data = snapshot.val() || {};
-            // 예약 상태만 따로 저장
+            reservations = {}; // ✅ 이전 데이터 초기화
+
             for (let key in data) {
-                reservations[key] = data[key].status;
+                reservations[key] = data[key].status; // ✅ 상태 저장
             }
+
             generateTable();
             generateMobileSchedule();
         });
