@@ -220,7 +220,7 @@
 <div class="header">
     <div class="title">SHU 미용실 예약</div>
     <div class="date-picker">
-        <input type="date" id="dateSelector" value="2025-05-23">
+        <input type="date" id="dateSelector" min="">
     </div>
 </div>
 
@@ -285,21 +285,35 @@
     let reservations = {};
     let selectedDate = '';
     let selectedTime = '';
+    let selectedFilterDate = ''; // ✅ 날짜 필터용 변수 추가
 
     function getDateLabels() {
+        if (selectedFilterDate) {
+            const parts = selectedFilterDate.split('-'); // yyyy-mm-dd
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            const day = parseInt(parts[2]);
+
+            const dateObj = new Date(year, month - 1, day); // ⚠️ 월은 0부터 시작
+            const dayName = ["일", "월", "화", "수", "목", "금", "토"][dateObj.getDay()];
+            const label = `${month}/${day}(${dayName})`;
+            return [label];
+        }
+
         const today = new Date();
         const labels = [];
         for (let i = 0; i < 14; i++) {
             const date = new Date(today);
             date.setDate(today.getDate() + i);
-            const day = date.getDay();
-            if (day !== 0) {
-                const label = `${date.getMonth()+1}/${date.getDate()}(${["일","월","화","수","목","금","토"][day]})`;
+            const dayOfWeek = date.getDay();
+            if (dayOfWeek !== 0) {
+                const label = `${date.getMonth() + 1}/${date.getDate()}(${["일", "월", "화", "수", "목", "금", "토"][dayOfWeek]})`;
                 labels.push(label);
             }
         }
         return labels;
     }
+
 
     function getTimeSlots(dateLabel) {
         const month = parseInt(dateLabel.split('/')[0]);
@@ -512,7 +526,31 @@
         });
     }
 
-    window.onload = loadReservationsFromFirebase;
+    window.onload = () => {
+        loadReservationsFromFirebase();
+
+        // ✅ 오늘 날짜를 min 값으로 설정
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const formattedToday = `${yyyy}-${mm}-${dd}`;
+        document.getElementById('dateSelector').setAttribute('min', formattedToday);
+
+        // ✅ 날짜 선택 이벤트
+        document.getElementById('dateSelector').addEventListener('change', (e) => {
+            const value = e.target.value;
+            if (value) {
+                selectedFilterDate = value;
+            } else {
+                selectedFilterDate = '';
+            }
+            generateTable();
+            generateMobileSchedule();
+        });
+    };
+
+
 </script>
 
 </body>
