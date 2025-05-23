@@ -381,9 +381,10 @@
 
                 if (slots.includes(hour)) {
                     const key = `${date}-${hour}`;
-                    const status = reservations[key] && reservations[key].status 
-                        ? reservations[key].status 
-                        : (reservations[key] === "booked" ? "booked" : "available");
+                    const status = reservations[key] && reservations[key].status === 'booked' 
+                                    ? 'booked' 
+                                    : 'available';
+
 
                     cell.className = status === 'available' ? 'available' : 'booked';
                     cell.textContent = status === 'available' ? '예약 가능' : '예약 완료';
@@ -427,7 +428,10 @@
 
             slots.forEach(hour => {
                 const key = `${date}-${hour}`;
-                const status = reservations[key] || 'available';
+                const status = reservations[key] && reservations[key].status === 'booked' 
+                                    ? 'booked' 
+                                    : 'available';
+
 
                 const btn = document.createElement('div');
                 btn.className = status === 'available' ? 'hour-button' : 'hour-button booked';
