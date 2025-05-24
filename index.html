@@ -10,6 +10,18 @@
     <title>SHU 미용실 예약 프로그램</title>
 
     <style>
+
+        /* ✅ 블록 상태 셀 (PC 테이블용) */
+        .reservation-table td.blocked {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+
+        /* ✅ 블록 상태 버튼 (모바일용) */
+        .hour-button.blocked {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
         /* ✅ 기본 세팅 */
         * {
             margin: 0;
@@ -411,13 +423,14 @@
         <label>비고:</label>
         <input type="text" id="note" placeholder="추가 요청사항을 입력하세요">
 
-        <button class="primary-button" onclick="submitReservation()">예약하기</button>
+        <button class="primary-button" onclick="checkBlockedBeforeReservation()">예약하기</button>
         <button class="secondary-button" onclick="closeReservationModal()">닫기</button>
     </div>
 </div>
 
 <script>
-    
+    let blockData = {}; // ✅ 블록 데이터 저장
+
     let currentLanguage = 'ko'; // 현재 언어 상태 (ko 또는 pt
 
     const firebaseConfig = {
@@ -527,7 +540,7 @@
         table.innerHTML = '';
         const dates = getDateLabels();
 
-        // 헤더 행
+        // ✅ 헤더
         const headerRow = document.createElement('tr');
         const timeHeader = document.createElement('th');
         timeHeader.textContent = currentLanguage === 'pt' ? 'Horário' : '시간';
@@ -540,7 +553,7 @@
         });
         table.appendChild(headerRow);
 
-        // 모든 시간 슬롯 수집
+        // ✅ 시간 목록
         const allTimes = new Set();
         dates.forEach(date => {
             getTimeSlots(date).forEach(time => allTimes.add(time));
@@ -552,9 +565,9 @@
             return ah !== bh ? ah - bh : am - bm;
         });
 
+        // ✅ 본문
         sortedTimes.forEach(hour => {
             const row = document.createElement('tr');
-
             const timeCell = document.createElement('td');
             timeCell.textContent = hour;
             row.appendChild(timeCell);
@@ -566,21 +579,28 @@
                 if (slots.includes(hour)) {
                     const key = formatDateKey(date, hour);
                     const status = reservations[key]?.status;
+                    const blocked = isBlocked(date, hour);
 
-                    const statusText = currentLanguage === 'pt'
-                        ? (status === 'approved' ? 'Reservado'
-                            : status === 'pending' ? 'Aguardando aprovação'
-                            : 'Disponível')
-                        : (status === 'approved' ? '예약 완료'
-                            : status === 'pending' ? '예약 신청중'
-                            : '예약 가능');
+                    let statusText = '';
+                    let statusClass = '';
 
-                    const statusClass = (status === 'approved') ? 'status-booked' :
-                                        (status === 'pending') ? 'status-pending' : 'status-available';
+                    if (blocked) {
+                        statusText = currentLanguage === 'pt' ? 'Indisponível' : '예약 불가';
+                        statusClass = 'blocked';
+                    } else {
+                        statusText = currentLanguage === 'pt'
+                            ? (status === 'approved' ? 'Reservado'
+                                : status === 'pending' ? 'Aguardando aprovação'
+                                : 'Disponível')
+                            : (status === 'approved' ? '예약 완료'
+                                : status === 'pending' ? '예약 신청중'
+                                : '예약 가능');
 
-                    cell.className = (status === 'approved') ? 'booked' :
+                        statusClass = (status === 'approved') ? 'booked' :
                                     (status === 'pending') ? 'pending' : 'available';
+                    }
 
+                    cell.className = statusClass;
                     cell.innerHTML = `
                         <div style="display: flex; flex-direction: column; gap: 4px;">
                             <div style="font-weight: bold;">${hour}</div>
@@ -588,15 +608,21 @@
                         </div>
                     `;
 
-                    cell.addEventListener('click', () => {
-                        selectedDate = date;
-                        selectedTime = hour;
-                        if (!reservations[key]) {
-                            openReservationModal();
-                        } else {
-                            alert('이미 예약된 시간입니다.');
-                        }
-                    });
+                    if (blocked || status === 'approved') {
+                        cell.style.cursor = 'not-allowed';
+                    } else {
+                        cell.addEventListener('click', () => {
+                            selectedDate = date;
+                            selectedTime = hour;
+                            if (!reservations[key]) {
+                                openReservationModal();
+                            } else {
+                                alert(currentLanguage === 'pt'
+                                    ? 'Este horário já está reservado.'
+                                    : '이미 예약된 시간입니다.');
+                            }
+                        });
+                    }
                 } else {
                     cell.style.backgroundColor = '#e9ecef';
                 }
@@ -607,6 +633,7 @@
             table.appendChild(row);
         });
     }
+
 
 
     function generateMobileSchedule() {
@@ -626,37 +653,47 @@
             slots.forEach(hour => {
                 const key = formatDateKey(date, hour);
                 const status = reservations[key]?.status;
+                const blocked = isBlocked(date, hour);
 
-                const statusText = currentLanguage === 'pt'
-                    ? (status === 'approved' ? 'Reservado'
-                        : status === 'pending' ? 'Aguardando aprovação'
-                        : 'Disponível')
-                    : (status === 'approved' ? '예약 완료'
-                        : status === 'pending' ? '예약 신청중'
-                        : '예약 가능');
-
-                const statusClass = (status === 'approved') ? 'status-booked' :
-                                    (status === 'pending') ? 'status-pending' : 'status-available';
+                const statusText = blocked 
+                    ? (currentLanguage === 'pt' ? 'Indisponível' : '예약 불가')
+                    : currentLanguage === 'pt'
+                        ? (status === 'approved' ? 'Reservado'
+                            : status === 'pending' ? 'Aguardando aprovação'
+                            : 'Disponível')
+                        : (status === 'approved' ? '예약 완료'
+                            : status === 'pending' ? '예약 신청중'
+                            : '예약 가능');
 
                 const btn = document.createElement('div');
-                btn.className = `hour-button ${status === 'approved' ? 'booked' : status === 'pending' ? 'pending' : ''}`;
+                btn.className = `hour-button ${
+                    blocked ? 'blocked' :
+                    status === 'approved' ? 'booked' :
+                    status === 'pending' ? 'pending' : ''
+                }`;
 
                 btn.innerHTML = `
                     <div style="display: flex; flex-direction: column; align-items: center;">
                         <span>${hour}</span>
-                        <div class="status-label ${statusClass}" style="margin-top: 4px;">${statusText}</div>
+                        <div class="status-label" style="margin-top: 4px;">${statusText}</div>
                     </div>
                 `;
 
-                btn.addEventListener('click', () => {
-                    selectedDate = date;
-                    selectedTime = hour;
-                    if (!reservations[key]) {
-                        openReservationModal();
-                    } else {
-                        alert('이미 예약된 시간입니다.');
-                    }
-                });
+                if (blocked || status === 'approved') {
+                    btn.style.cursor = 'not-allowed';
+                } else {
+                    btn.addEventListener('click', () => {
+                        selectedDate = date;
+                        selectedTime = hour;
+                        if (!reservations[key]) {
+                            openReservationModal();
+                        } else {
+                            alert(currentLanguage === 'pt'
+                                ? 'Este horário já está reservado.'
+                                : '이미 예약된 시간입니다.');
+                        }
+                    });
+                }
 
                 hourList.appendChild(btn);
             });
@@ -683,6 +720,23 @@
             btn.classList.toggle('selected', btn.dataset.value === value);
         });
     }
+
+    function isBlocked(dateLabel, time) {
+        const parts = dateLabel.match(/(\d+)\/(\d+)/);
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        const year = new Date().getFullYear();
+        const dateKey = `${year}-${month}-${day}`;
+
+        const block = blockData[dateKey];
+        if (!block) return false;
+
+        if (block.allDay) return true; // ✅ 전체 블록
+        if (block.blockedTimes && block.blockedTimes[time]) return true; // ✅ 시간 블록
+
+        return false;
+    }
+
 
     function formatDateKey(dateString, time) {
         const parts = dateString.match(/(\d+)\/(\d+)/);
@@ -751,6 +805,17 @@
             generateMobileSchedule();
         });
     }
+
+    function loadBlocksFromFirebase() {
+        database.ref('blocks').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            blockData = {...data};
+            generateTable();
+            generateMobileSchedule();
+        });
+    }
+
+
 
         
     function translateToPortuguese() {
@@ -862,6 +927,17 @@
     }
 
 
+    function checkBlockedBeforeReservation() {
+        if (isBlocked(selectedDate, selectedTime)) {
+            alert(currentLanguage === 'pt' ? 
+                "❌ Este horário está bloqueado." : 
+                "❌ 이 시간은 예약 불가합니다.");
+            return;
+        }
+
+        submitReservation();
+    }
+
 
 
 
@@ -869,6 +945,8 @@
     window.onload = () => {
 
         loadReservationsFromFirebase();
+
+        loadBlocksFromFirebase(); // 🔥 반드시 추가 필요
 
         // ✅ 오늘 날짜를 min 값으로 설정
         const today = new Date();
