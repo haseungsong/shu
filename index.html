@@ -401,8 +401,8 @@
 
         <label>성별:</label>
         <div class="gender-container">
-            <button type="button" class="gender-button" data-value="남자" onclick="selectGender('남자')">남자</button>
             <button type="button" class="gender-button" data-value="여자" onclick="selectGender('여자')">여자</button>
+            <button type="button" class="gender-button" data-value="남자" onclick="selectGender('남자')">남자</button>
         </div>
         <input type="hidden" id="gender">
 
@@ -721,11 +721,23 @@
     }
 
     function selectGender(value) {
-        document.getElementById('gender').value = value;
+        document.getElementById('gender').value = value;  // 항상 '남자' 또는 '여자' 저장
+
         document.querySelectorAll('.gender-button').forEach(btn => {
             btn.classList.toggle('selected', btn.dataset.value === value);
         });
     }
+
+    function getGenderDisplay(gender) {
+        if (gender === '남자') {
+            return currentLanguage === 'pt' ? 'Masculino' : '남자';
+        } else if (gender === '여자') {
+            return currentLanguage === 'pt' ? 'Feminino' : '여자';
+        } else {
+            return gender;  // 혹시라도 값이 다를 경우 그대로 반환
+        }
+    }
+
 
     function isBlocked(dateLabel, time) {
         const parts = dateLabel.match(/(\d+)\/(\d+)/);
@@ -761,12 +773,20 @@
         const gender = document.getElementById('gender').value.trim();
         const service = document.getElementById('service').value;
         const note = document.getElementById('note').value.trim();
+        const genderDisplay = getGenderDisplay(gender);
+        
+        // ✅ 연락처 유효성 검사 추가
+        const contactRegex = /^\d{11}$/;
+        if (!contactRegex.test(contact)) {
+            return alert(currentLanguage === 'pt' 
+                ? "O contato deve conter exatamente 11 números (ex: 11995033606)." 
+                : "연락처는 숫자 11자리여야 합니다. (예: 11995033606)");
+        }
 
-        if (!contact) return alert("연락처를 입력해주세요.");
-        if (!gender) return alert("성별을 선택해주세요.");
-        if (!name) return alert("성함을 입력해주세요.");
+        if (!contact) return alert(currentLanguage === 'pt' ? "Por favor, insira o contato." : "연락처를 입력해주세요.");
+        if (!gender) return alert(currentLanguage === 'pt' ? "Por favor, selecione o gênero." : "성별을 선택해주세요.");
+        if (!name) return alert(currentLanguage === 'pt' ? "Por favor, insira o nome." : "성함을 입력해주세요.");
 
-        // ✅ 키 생성 방식 수정
         const key = formatDateKey(selectedDate, selectedTime);
 
         database.ref('reservations/' + key).set({
@@ -777,23 +797,37 @@
             name,
             service,
             note,
-            status: "pending", // 🔥 예약 신청 상태
+            status: "pending",
             timestamp: Date.now()
         }, (error) => {
             if (error) {
-                alert('예약 저장 중 오류 발생');
+                alert(currentLanguage === 'pt' ? 'Erro ao salvar a reserva.' : '예약 저장 중 오류 발생');
             } else {
-                alert(`✅ 예약 신청 완료!
-                ----------------------------
-                날짜: ${selectedDate}
-                시간: ${selectedTime}
-                연락처: ${contact}
-                성별: ${gender}
-                이름: ${name}
-                서비스: ${service}
-                비고: ${note}
-                ----------------------------
-                승인 후 예약이 확정됩니다.`);
+                const message = currentLanguage === 'pt' 
+                    ? `✅ Solicitação de reserva concluída!
+    ----------------------------
+    📅 Data: ${selectedDate}
+    ⏰ Hora: ${selectedTime}
+    📞 Contato: ${contact}
+    👤 Gênero: ${genderDisplay}
+    🙍 Nome: ${name}
+    ✂️ Serviço: ${service}
+    📝 Observações: ${note}
+    ----------------------------
+    A reserva será confirmada após aprovação.`
+                    : `✅ 예약 신청 완료!
+    ----------------------------
+    📅 날짜: ${selectedDate}
+    ⏰ 시간: ${selectedTime}
+    📞 연락처: ${contact}
+    👤 성별: ${genderDisplay}
+    🙍 이름: ${name}
+    ✂️ 서비스: ${service}
+    📝 비고: ${note}
+    ----------------------------
+    승인 후 예약이 확정됩니다.`;
+
+                alert(message);
             }
         });
 
