@@ -377,7 +377,8 @@
             📷
         </a>
 
-        <button class="icon-button" onclick="translateToPortuguese()" title="Português">🇧🇷</button>
+        <button class="icon-button" onclick="toggleLanguage()" id="langButton" title="언어 전환">🇧🇷</button>
+
 
     </div>
 </div>
@@ -855,7 +856,25 @@
         });
     }
 
+        // ✅ 언어 토글 함수 (여기에 추가!)
+    function toggleLanguage() {
+        if (currentLanguage === 'ko') {
+            translateToPortuguese();
+            document.getElementById('langButton').innerText = '🇰🇷';
+        } else {
+            translateToKorean();
+            document.getElementById('langButton').innerText = '🇧🇷';
+        }
+    }
 
+    function toggleLanguage() {
+        if (currentLanguage === 'ko') {
+            translateToPortuguese();
+            document.getElementById('langButton').innerText = '🇰🇷';
+        } else {
+            location.reload(); // 🔥 페이지 새로고침으로 한국어 상태 복구
+        }
+    }
 
         
     function translateToPortuguese() {
@@ -879,6 +898,7 @@
             "예약 신청중": "Aguardando aprovação",
             "예약 완료": "Reservado"
         };
+        
 
         document.querySelectorAll('*').forEach(el => {
             if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
@@ -888,7 +908,7 @@
                 }
             }
         });
-
+    
         // 드롭다운
         const select = document.getElementById('service');
         const options = {
