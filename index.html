@@ -365,9 +365,8 @@
             📷
         </a>
 
-        <button class="icon-button" onclick="translateToPortuguese(); translateDayToPortuguese();" title="Português">
-            🇧🇷
-        </button>
+        <button class="icon-button" onclick="translateToPortuguese()" title="Português">🇧🇷</button>
+
     </div>
 </div>
 
@@ -418,6 +417,9 @@
 </div>
 
 <script>
+    
+    let currentLanguage = 'ko'; // 현재 언어 상태 (ko 또는 pt
+
     const firebaseConfig = {
         apiKey: "AIzaSyBXmLMLMUeu1Y_WyDmvfZkg93u4T-nQewM",
         authDomain: "hair-reservation-78133.firebaseapp.com",
@@ -436,14 +438,24 @@
     let selectedFilterDate = ''; // ✅ 날짜 필터용 변수 추가
 
     function getDateLabels() {
+        const dayMap = {
+            "일": currentLanguage === 'pt' ? "Dom" : "일",
+            "월": currentLanguage === 'pt' ? "Seg" : "월",
+            "화": currentLanguage === 'pt' ? "Ter" : "화",
+            "수": currentLanguage === 'pt' ? "Qua" : "수",
+            "목": currentLanguage === 'pt' ? "Qui" : "목",
+            "금": currentLanguage === 'pt' ? "Sex" : "금",
+            "토": currentLanguage === 'pt' ? "Sáb" : "토"
+        };
+
         if (selectedFilterDate) {
-            const parts = selectedFilterDate.split('-'); // yyyy-mm-dd
+            const parts = selectedFilterDate.split('-');
             const year = parseInt(parts[0]);
             const month = parseInt(parts[1]);
             const day = parseInt(parts[2]);
 
-            const dateObj = new Date(year, month - 1, day); // ⚠️ 월은 0부터 시작
-            const dayName = ["일", "월", "화", "수", "목", "금", "토"][dateObj.getDay()];
+            const dateObj = new Date(year, month - 1, day);
+            const dayName = dayMap[["일", "월", "화", "수", "목", "금", "토"][dateObj.getDay()]];
             const label = `${month}/${day}(${dayName})`;
             return [label];
         }
@@ -455,12 +467,14 @@
             date.setDate(today.getDate() + i);
             const dayOfWeek = date.getDay();
             if (dayOfWeek !== 0) {
-                const label = `${date.getMonth() + 1}/${date.getDate()}(${["일", "월", "화", "수", "목", "금", "토"][dayOfWeek]})`;
+                const dayName = dayMap[["일", "월", "화", "수", "목", "금", "토"][dayOfWeek]];
+                const label = `${date.getMonth() + 1}/${date.getDate()}(${dayName})`;
                 labels.push(label);
             }
         }
         return labels;
     }
+
 
 
     function getTimeSlots(dateLabel) {
@@ -516,7 +530,7 @@
         // 헤더 행
         const headerRow = document.createElement('tr');
         const timeHeader = document.createElement('th');
-        timeHeader.textContent = '시간';
+        timeHeader.textContent = currentLanguage === 'pt' ? 'Horário' : '시간';
         headerRow.appendChild(timeHeader);
 
         dates.forEach(date => {
@@ -554,8 +568,14 @@
                     const key = `${safeDate}-${hour}`;
                     const status = reservations[key]?.status;
 
-                    const statusText = (status === 'approved') ? '예약 완료' :
-                                        (status === 'pending') ? '예약 신청중' : '예약 가능';
+                    const statusText = currentLanguage === 'pt'
+                        ? (status === 'approved' ? 'Reservado'
+                            : status === 'pending' ? 'Aguardando aprovação'
+                            : 'Disponível')
+                        : (status === 'approved' ? '예약 완료'
+                            : status === 'pending' ? '예약 신청중'
+                            : '예약 가능');
+
                     const statusClass = (status === 'approved') ? 'status-booked' :
                                         (status === 'pending') ? 'status-pending' : 'status-available';
 
@@ -609,8 +629,14 @@
                 const key = `${safeDate}-${hour}`;
                 const status = reservations[key]?.status;
 
-                const statusText = (status === 'approved') ? '예약 완료' :
-                                    (status === 'pending') ? '예약 신청중' : '예약 가능';
+                const statusText = currentLanguage === 'pt'
+                    ? (status === 'approved' ? 'Reservado'
+                        : status === 'pending' ? 'Aguardando aprovação'
+                        : 'Disponível')
+                    : (status === 'approved' ? '예약 완료'
+                        : status === 'pending' ? '예약 신청중'
+                        : '예약 가능');
+
                 const statusClass = (status === 'approved') ? 'status-booked' :
                                     (status === 'pending') ? 'status-pending' : 'status-available';
 
@@ -643,9 +669,11 @@
     }
 
     function openReservationModal() {
-        document.getElementById('reservation-title').textContent = `${selectedDate} ${selectedTime} 예약 정보 입력`;
+        const titleBase = currentLanguage === 'pt' ? 'Preencher informações da reserva' : '예약 정보 입력';
+        document.getElementById('reservation-title').textContent = `${selectedDate} ${selectedTime} ${titleBase}`;
         document.getElementById('reservation-modal').style.display = 'block';
     }
+
 
     function closeReservationModal() {
         document.getElementById('reservation-modal').style.display = 'none';
@@ -714,31 +742,10 @@
         });
     }
 
-    function translateDayToPortuguese() {
-        const dayMap = {
-            "일": "Dom",
-            "월": "Seg",
-            "화": "Ter",
-            "수": "Qua",
-            "목": "Qui",
-            "금": "Sex",
-            "토": "Sáb"
-        };
-
-        document.querySelectorAll('*').forEach(el => {
-            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
-                const text = el.innerText.trim();
-                const match = text.match(/\((.)\)/);
-                if (match && dayMap[match[1]]) {
-                    const newText = text.replace(`(${match[1]})`, `(${dayMap[match[1]]})`);
-                    el.innerText = newText;
-                }
-            }
-        });
-    }
-
-    
+        
     function translateToPortuguese() {
+        currentLanguage = 'pt';
+
         const translations = {
             "SHU 미용실 예약": "SHU Salão Reserva",
             "날짜 선택": "Selecionar data",
@@ -767,7 +774,7 @@
             }
         });
 
-        // 드롭다운 옵션도 변환
+        // 드롭다운
         const select = document.getElementById('service');
         const options = {
             "커트": "Corte",
@@ -785,8 +792,29 @@
             }
         }
 
+        // ✅ placeholder 변환
+        document.getElementById('name').placeholder = "Digite seu nome";
+        document.getElementById('contact').placeholder = "Ex)11995033606";
+        document.getElementById('note').placeholder = "Digite observações adicionais";
+
+        // ✅ 페이지 제목 및 헤더
         document.title = translations[document.title] || document.title;
+        const headerTitle = document.querySelector('.header .title');
+        if (headerTitle) headerTitle.innerText = "SHU Salão Reserva";
+
+        // ✅ 모달 타이틀
+        const titleBase = 'Preencher informações da reserva';
+        document.getElementById('reservation-title').textContent =
+            selectedDate && selectedTime
+                ? `${selectedDate} ${selectedTime} ${titleBase}`
+                : titleBase;
+
+        // ✅ 날짜 테이블, 모바일 테이블 새로고침
+        generateTable();
+        generateMobileSchedule();
     }
+
+
 
 
     window.onload = () => {
