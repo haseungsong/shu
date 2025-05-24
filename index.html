@@ -479,7 +479,7 @@
             const date = new Date(today);
             date.setDate(today.getDate() + i);
             const dayOfWeek = date.getDay();
-            if (dayOfWeek !== 0) {
+            if (dayOfWeek !== 0 && dayOfWeek !== 1) {  // ✅ 일요일(0)과 월요일(1) 제외
                 const dayName = dayMap[["일", "월", "화", "수", "목", "금", "토"][dayOfWeek]];
                 const label = `${date.getMonth() + 1}/${date.getDate()}(${dayName})`;
                 labels.push(label);
@@ -487,6 +487,7 @@
         }
         return labels;
     }
+
 
 
 
@@ -506,6 +507,7 @@
         const currentMinute = today.getMinutes();
 
         if (dayOfWeek === 6) {
+            // ✅ 토요일
             const times = [
                 '09:30', '10:00', '10:30', '11:00', '11:30',
                 '12:00', '12:30', '13:00', '13:30',
@@ -517,13 +519,14 @@
                     slots.push(time);
                 }
             });
-        } else {
-            const weekdayTimes = [];
-            for (let h = 10; h <= 18; h++) {
-                weekdayTimes.push(`${h}:00`);
-                weekdayTimes.push(`${h}:30`);
-            }
-            weekdayTimes.push('19:00');
+        } else if (dayOfWeek !== 0 && dayOfWeek !== 1) {
+            // ✅ 평일 (화~금)
+            const weekdayTimes = [
+                '10:00', '10:30', '11:00', '11:30',
+                '12:00', '12:30', '13:00', '13:30',
+                '14:00', '14:30', '15:00', '15:30',
+                '16:00', '16:30', '17:00', '17:30'  // ✔️ 17:30 포함
+            ];
 
             weekdayTimes.forEach(time => {
                 const [h, m] = time.split(':').map(Number);
@@ -534,6 +537,9 @@
         }
         return slots;
     }
+
+
+
 
     function generateTable() {
         const table = document.getElementById('reservation-table');
@@ -939,14 +945,9 @@
     }
 
 
-
-
-
     window.onload = () => {
-
         loadReservationsFromFirebase();
-
-        loadBlocksFromFirebase(); // 🔥 반드시 추가 필요
+        loadBlocksFromFirebase(); // 🔥 반드시 필요
 
         // ✅ 오늘 날짜를 min 값으로 설정
         const today = new Date();
@@ -956,10 +957,25 @@
         const formattedToday = `${yyyy}-${mm}-${dd}`;
         document.getElementById('dateSelector').setAttribute('min', formattedToday);
 
-        // ✅ 날짜 선택 이벤트
+        // ✅ 날짜 선택 이벤트 (일요일, 월요일 선택 불가)
         document.getElementById('dateSelector').addEventListener('change', (e) => {
             const value = e.target.value;
             if (value) {
+                const selectedDateObj = new Date(value);
+                const dayOfWeek = selectedDateObj.getDay(); // 0: 일요일, 1: 월요일
+
+                if (dayOfWeek === 0 || dayOfWeek === 1) {
+                    alert(currentLanguage === 'pt'
+                        ? "❌ Domingo e Segunda-feira não estão disponíveis."
+                        : "❌ 일요일과 월요일은 예약이 불가능합니다.");
+                    
+                    e.target.value = '';
+                    selectedFilterDate = '';
+                    generateTable();
+                    generateMobileSchedule();
+                    return;
+                }
+
                 selectedFilterDate = value;
             } else {
                 selectedFilterDate = '';
@@ -967,7 +983,9 @@
             generateTable();
             generateMobileSchedule();
         });
+
     };
+
 
 
 
