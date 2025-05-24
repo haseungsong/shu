@@ -69,31 +69,60 @@
             font-weight: 600;
         }
         .reservation-table td {
-            padding: 12px;
+            padding: 20px;
             text-align: center;
-            border: 1px solid #E5E7EB;
+            white-space: nowrap;
+            border-radius: 18px;
+            background-color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+        }
+
+        /* ✅ 상태별 색상 */
+        .status-available {
+            background-color: #ECFDF5;
+            color: #065F46;
+        }
+
+        .status-pending {
+            background-color: #FFFBEB;
+            color: #92400E;
+        }
+
+        .status-booked {
+            background-color: #FEF2F2;
+            color: #991B1B;
         }
 
         /* ✅ 상태별 테이블 셀 */
+        /* ✅ 상태별 셀 스타일 유지 */
         .reservation-table td.available {
             background-color: #ECFDF5;
             color: #065F46;
-            cursor: pointer;
         }
-        .reservation-table td.booked {
-            background-color: #FEF2F2;
-            color: #991B1B;
-            cursor: pointer;
-        }
+
         .reservation-table td.pending {
             background-color: #FFFBEB;
             color: #92400E;
-            cursor: pointer;
-        }
-        .reservation-table td:hover {
-            opacity: 0.8;
         }
 
+        .reservation-table td.booked {
+            background-color: #FEF2F2;
+            color: #991B1B;
+        }
+
+        /* ✅ 비어있는 셀은 흐리게 처리 */
+        .reservation-table td.empty {
+            background-color: #F3F4F6;
+            color: #9CA3AF;
+            box-shadow: none;
+            cursor: default;
+        }
+        .reservation-table td:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            opacity: 0.9;
+        }
         /* ✅ 모바일 스케줄 카드 */
         .mobile-schedule {
             display: none;
@@ -427,6 +456,8 @@
         const table = document.getElementById('reservation-table');
         table.innerHTML = '';
         const dates = getDateLabels();
+
+        // 헤더 행
         const headerRow = document.createElement('tr');
         const timeHeader = document.createElement('th');
         timeHeader.textContent = '시간';
@@ -439,10 +470,12 @@
         });
         table.appendChild(headerRow);
 
+        // 모든 시간 슬롯 수집
         const allTimes = new Set();
         dates.forEach(date => {
             getTimeSlots(date).forEach(time => allTimes.add(time));
         });
+
         const sortedTimes = Array.from(allTimes).sort((a, b) => {
             const [ah, am] = a.split(':').map(Number);
             const [bh, bm] = b.split(':').map(Number);
@@ -451,6 +484,7 @@
 
         sortedTimes.forEach(hour => {
             const row = document.createElement('tr');
+
             const timeCell = document.createElement('td');
             timeCell.textContent = hour;
             row.appendChild(timeCell);
@@ -464,16 +498,20 @@
                     const key = `${safeDate}-${hour}`;
                     const status = reservations[key]?.status;
 
-                    if (status === 'approved') {
-                        cell.className = 'booked';    // 예약 완료
-                        cell.textContent = '예약 완료';
-                    } else if (status === 'pending') {
-                        cell.className = 'pending';   // 예약 신청중
-                        cell.textContent = '예약 신청중';
-                    } else {
-                        cell.className = 'available'; // 예약 가능
-                        cell.textContent = '예약 가능';
-                    }
+                    const statusText = (status === 'approved') ? '예약 완료' :
+                                        (status === 'pending') ? '예약 신청중' : '예약 가능';
+                    const statusClass = (status === 'approved') ? 'status-booked' :
+                                        (status === 'pending') ? 'status-pending' : 'status-available';
+
+                    cell.className = (status === 'approved') ? 'booked' :
+                                    (status === 'pending') ? 'pending' : 'available';
+
+                    cell.innerHTML = `
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <div style="font-weight: bold;">${hour}</div>
+                            <div>${statusText}</div>
+                        </div>
+                    `;
 
                     cell.addEventListener('click', () => {
                         selectedDate = date;
@@ -487,12 +525,14 @@
                 } else {
                     cell.style.backgroundColor = '#e9ecef';
                 }
+
                 row.appendChild(cell);
             });
 
             table.appendChild(row);
         });
     }
+
 
     function generateMobileSchedule() {
         const container = document.getElementById('mobile-schedule');
@@ -513,18 +553,20 @@
                 const key = `${safeDate}-${hour}`;
                 const status = reservations[key]?.status;
 
-                const btn = document.createElement('div'); // ✅ btn 선언 추가
+                const statusText = (status === 'approved') ? '예약 완료' :
+                                    (status === 'pending') ? '예약 신청중' : '예약 가능';
+                const statusClass = (status === 'approved') ? 'status-booked' :
+                                    (status === 'pending') ? 'status-pending' : 'status-available';
 
-                if (status === 'approved') {
-                    btn.className = 'hour-button booked';
-                    btn.textContent = `${hour}\n예약 완료`;
-                } else if (status === 'pending') {
-                    btn.className = 'hour-button pending';
-                    btn.textContent = `${hour}\n예약 신청중`;
-                } else {
-                    btn.className = 'hour-button';
-                    btn.textContent = `${hour}\n예약 가능`;
-                }
+                const btn = document.createElement('div');
+                btn.className = `hour-button ${status === 'approved' ? 'booked' : status === 'pending' ? 'pending' : ''}`;
+
+                btn.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <span>${hour}</span>
+                        <div class="status-label ${statusClass}" style="margin-top: 4px;">${statusText}</div>
+                    </div>
+                `;
 
                 btn.addEventListener('click', () => {
                     selectedDate = date;
@@ -543,7 +585,6 @@
             container.appendChild(block);
         });
     }
-
 
     function openReservationModal() {
         document.getElementById('reservation-title').textContent = `${selectedDate} ${selectedTime} 예약 정보 입력`;
