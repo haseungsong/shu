@@ -364,6 +364,10 @@
         <a href="https://www.instagram.com/shu_hairstudio" target="_blank" class="icon-button" title="Instagram 방문">
             📷
         </a>
+
+        <button class="icon-button" onclick="translateToPortuguese(); translateDayToPortuguese();" title="Português">
+            🇧🇷
+        </button>
     </div>
 </div>
 
@@ -709,6 +713,81 @@
             generateMobileSchedule();
         });
     }
+
+    function translateDayToPortuguese() {
+        const dayMap = {
+            "일": "Dom",
+            "월": "Seg",
+            "화": "Ter",
+            "수": "Qua",
+            "목": "Qui",
+            "금": "Sex",
+            "토": "Sáb"
+        };
+
+        document.querySelectorAll('*').forEach(el => {
+            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
+                const text = el.innerText.trim();
+                const match = text.match(/\((.)\)/);
+                if (match && dayMap[match[1]]) {
+                    const newText = text.replace(`(${match[1]})`, `(${dayMap[match[1]]})`);
+                    el.innerText = newText;
+                }
+            }
+        });
+    }
+
+    
+    function translateToPortuguese() {
+        const translations = {
+            "SHU 미용실 예약": "SHU Salão Reserva",
+            "날짜 선택": "Selecionar data",
+            "예약 정보 입력": "Preencher informações da reserva",
+            "연락처 (필수):": "Contato (obrigatório):",
+            "성별:": "Gênero:",
+            "남자": "Masculino",
+            "여자": "Feminino",
+            "성함:": "Nome:",
+            "서비스:": "Serviço:",
+            "비고:": "Observações:",
+            "예약하기": "Reservar",
+            "닫기": "Fechar",
+            "시간": "Horário",
+            "예약 가능": "Disponível",
+            "예약 신청중": "Aguardando aprovação",
+            "예약 완료": "Reservado"
+        };
+
+        document.querySelectorAll('*').forEach(el => {
+            if (el.childNodes.length === 1 && el.childNodes[0].nodeType === 3) {
+                const text = el.innerText.trim();
+                if (translations[text]) {
+                    el.innerText = translations[text];
+                }
+            }
+        });
+
+        // 드롭다운 옵션도 변환
+        const select = document.getElementById('service');
+        const options = {
+            "커트": "Corte",
+            "펌 - 매직": "Permanente - Alisamento",
+            "펌 - 세팅": "Permanente - Modelador",
+            "펌 - 일반펌": "Permanente - Tradicional",
+            "염색": "Coloração",
+            "염색 + 커트": "Coloração + Corte",
+            "브릿지": "Mechas"
+        };
+        for (let i = 0; i < select.options.length; i++) {
+            const option = select.options[i];
+            if (options[option.text]) {
+                option.text = options[option.text];
+            }
+        }
+
+        document.title = translations[document.title] || document.title;
+    }
+
 
     window.onload = () => {
         loadReservationsFromFirebase();
