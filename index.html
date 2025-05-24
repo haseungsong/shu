@@ -814,10 +814,36 @@
         generateMobileSchedule();
     }
 
+    // ✅ 상태값 변환 함수 추가
+    function migrateStatus() {
+        const ref = database.ref('reservations');
+        ref.once('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            Object.keys(data).forEach(key => {
+                const item = data[key];
+                let newStatus = item.status;
+
+                if (newStatus === '예약 완료') newStatus = 'approved';
+                if (newStatus === '예약 신청중') newStatus = 'pending';
+                if (newStatus === '예약 가능') newStatus = 'available';
+
+                if (newStatus !== item.status) {
+                    ref.child(key).update({status: newStatus});
+                }
+            });
+
+            console.log('✅ 상태값 변환 완료');
+        });
+    }
+
 
 
 
     window.onload = () => {
+        migrateStatus();  // 🔥 페이지 로드 시 상태 변환 자동 실행
+
         loadReservationsFromFirebase();
 
         // ✅ 오늘 날짜를 min 값으로 설정
@@ -840,6 +866,7 @@
             generateMobileSchedule();
         });
     };
+
 
 
 </script>
