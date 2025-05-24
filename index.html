@@ -564,8 +564,7 @@
                 const cell = document.createElement('td');
 
                 if (slots.includes(hour)) {
-                    const safeDate = date.replace(/\//g, '-');
-                    const key = `${safeDate}-${hour}`;
+                    const key = formatDateKey(date, hour);
                     const status = reservations[key]?.status;
 
                     const statusText = currentLanguage === 'pt'
@@ -625,8 +624,7 @@
 
             const slots = getTimeSlots(date);
             slots.forEach(hour => {
-                const safeDate = date.replace(/\//g, '-');
-                const key = `${safeDate}-${hour}`;
+                const key = formatDateKey(date, hour);
                 const status = reservations[key]?.status;
 
                 const statusText = currentLanguage === 'pt'
@@ -686,6 +684,17 @@
         });
     }
 
+    function formatDateKey(dateString, time) {
+        const parts = dateString.match(/(\d+)\/(\d+)/);
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+
+        const today = new Date();
+        const year = today.getFullYear();
+
+        return `${year}-${month}-${day}-${time}`;
+    }
+
     function submitReservation() {
         const name = document.getElementById('name').value.trim();
         const contact = document.getElementById('contact').value.trim();
@@ -697,8 +706,8 @@
         if (!gender) return alert("성별을 선택해주세요.");
         if (!name) return alert("성함을 입력해주세요.");
 
-        const safeDate = selectedDate.replace(/\//g, '-');
-        const key = `${safeDate}-${selectedTime}`;
+        // ✅ 키 생성 방식 수정
+        const key = formatDateKey(selectedDate, selectedTime);
 
         database.ref('reservations/' + key).set({
             date: selectedDate,
@@ -715,16 +724,16 @@
                 alert('예약 저장 중 오류 발생');
             } else {
                 alert(`✅ 예약 신청 완료!
-        ----------------------------
-        날짜: ${selectedDate}
-        시간: ${selectedTime}
-        연락처: ${contact}
-        성별: ${gender}
-        이름: ${name}
-        서비스: ${service}
-        비고: ${note}
-        ----------------------------
-        승인 후 예약이 확정됩니다.`);
+                ----------------------------
+                날짜: ${selectedDate}
+                시간: ${selectedTime}
+                연락처: ${contact}
+                성별: ${gender}
+                이름: ${name}
+                서비스: ${service}
+                비고: ${note}
+                ----------------------------
+                승인 후 예약이 확정됩니다.`);
             }
         });
 
@@ -732,6 +741,7 @@
         generateTable();
         generateMobileSchedule();
     }
+
 
     function loadReservationsFromFirebase() {
         database.ref('reservations').on('value', (snapshot) => {
@@ -815,34 +825,48 @@
     }
 
     // ✅ 상태값 변환 함수 추가
-    function migrateStatus() {
-        const ref = database.ref('reservations');
-        ref.once('value', (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
+    function migrateData() {
+        const flagRef = database.ref('migration_done');
+        flagRef.once('value', (snapshot) => {
+            if (snapshot.val()) {
+                console.log('✅ 이미 마이그레이션 완료됨');
+                return;
+            }
 
-            Object.keys(data).forEach(key => {
-                const item = data[key];
-                let newStatus = item.status;
+            const ref = database.ref('reservations');
+            ref.once('value', (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
 
-                if (newStatus === '예약 완료') newStatus = 'approved';
-                if (newStatus === '예약 신청중') newStatus = 'pending';
-                if (newStatus === '예약 가능') newStatus = 'available';
+                Object.keys(data).forEach(oldKey => {
+                    const parts = oldKey.split('-');
+                    if (parts.length < 3) return;
 
-                if (newStatus !== item.status) {
-                    ref.child(key).update({status: newStatus});
-                }
+                    const month = parts[0].padStart(2, '0');
+                    const day = parts[1].replace(/\(.*\)/, '').padStart(2, '0');
+                    const time = parts[2];
+
+                    const year = new Date().getFullYear();
+                    const newKey = `${year}-${month}-${day}-${time}`;
+
+                    const value = data[oldKey];
+                    ref.child(newKey).set(value);
+                    ref.child(oldKey).remove();
+                });
+
+                // ✅ 마이그레이션 완료 플래그 저장
+                flagRef.set(true);
+                console.log('✅ 데이터 마이그레이션 완료');
             });
-
-            console.log('✅ 상태값 변환 완료');
         });
     }
 
 
 
 
+
+
     window.onload = () => {
-        migrateStatus();  // 🔥 페이지 로드 시 상태 변환 자동 실행
 
         loadReservationsFromFirebase();
 
